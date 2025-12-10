@@ -1,0 +1,744 @@
+openapi: 3.0.3
+info:
+  title: Sahi Jagah API
+  description: Property marketplace API for Indian tier-2/tier-3 cities
+  version: 1.0.0
+  contact:
+    name: Sahi Jagah Support
+    phone: '+917093187420'
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Development server
+  - url: https://api.sahijagah.com/api/v1
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User profile management
+  - name: Properties
+    description: Property listing operations
+  - name: Search
+    description: Property search and discovery
+  - name: Favorites
+    description: User favorites management
+  - name: Bookings
+    description: Property visit scheduling
+  - name: Messaging
+    description: Real-time messaging
+  - name: Notifications
+    description: User notifications
+  - name: Admin
+    description: Admin operations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [client, owner, agent, admin]
+        name:
+          type: string
+        profilePhoto:
+          type: string
+        isActive:
+          type: boolean
+        isVerified:
+          type: boolean
+        preferences:
+          type: object
+          properties:
+            emailNotifications:
+              type: boolean
+            smsNotifications:
+              type: boolean
+            pushNotifications:
+              type: boolean
+
+    Property:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        propertyType:
+          type: string
+          enum: [rent, sale]
+        bedrooms:
+          type: integer
+        bathrooms:
+          type: integer
+        area:
+          type: number
+        city:
+          type: string
+        address:
+          type: string
+        location:
+          type: object
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+        amenities:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        videos:
+          type: array
+          items:
+            type: string
+        ownerId:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, rented, sold]
+        isVerified:
+          type: boolean
+        viewCount:
+          type: integer
+        favoritesCount:
+          type: integer
+        inquiriesCount:
+          type: integer
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+        propertyId:
+          type: string
+        clientId:
+          type: string
+        ownerId:
+          type: string
+        scheduledDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [requested, confirmed, cancelled, completed]
+        notes:
+          type: string
+        cancellationReason:
+          type: string
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - role
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [client, owner, agent]
+                name:
+                  type: string
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email/password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid credentials
+
+  /auth/otp/send:
+    post:
+      tags:
+        - Authentication
+      summary: Send OTP to phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+              properties:
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: OTP sent successfully
+        '429':
+          description: Rate limit exceeded
+
+  /auth/otp/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Verify OTP and login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - otp
+              properties:
+                phone:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        '200':
+          description: OTP verified, login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid or expired OTP
+
+  /properties:
+    get:
+      tags:
+        - Properties
+      summary: List properties with filters
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: propertyType
+          in: query
+          schema:
+            type: string
+            enum: [rent, sale]
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: bedrooms
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Property'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  totalPages:
+                    type: integer
+
+    post:
+      tags:
+        - Properties
+      summary: Create a new property
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Property'
+      responses:
+        '201':
+          description: Property created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Only owners and agents can create properties
+
+  /properties/{id}:
+    get:
+      tags:
+        - Properties
+      summary: Get property details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Property details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+        '404':
+          description: Property not found
+
+    put:
+      tags:
+        - Properties
+      summary: Update property
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Property'
+      responses:
+        '200':
+          description: Property updated successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Only property owner can update
+        '404':
+          description: Property not found
+
+    delete:
+      tags:
+        - Properties
+      summary: Delete property (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Property deleted successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Property not found
+
+  /search:
+    get:
+      tags:
+        - Search
+      summary: Search properties with Algolia
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: propertyType
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: amenities
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Property'
+                  nbHits:
+                    type: integer
+
+  /favorites:
+    get:
+      tags:
+        - Favorites
+      summary: Get user's favorites
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of favorite properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Property'
+
+    post:
+      tags:
+        - Favorites
+      summary: Add property to favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - propertyId
+              properties:
+                propertyId:
+                  type: string
+      responses:
+        '201':
+          description: Property added to favorites
+        '400':
+          description: Property already in favorites
+
+  /favorites/{propertyId}:
+    delete:
+      tags:
+        - Favorites
+      summary: Remove property from favorites
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: propertyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Property removed from favorites
+        '404':
+          description: Favorite not found
+
+  /bookings:
+    get:
+      tags:
+        - Bookings
+      summary: Get user's bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [requested, confirmed, cancelled, completed]
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+
+    post:
+      tags:
+        - Bookings
+      summary: Create a booking request
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - propertyId
+                - scheduledDate
+              properties:
+                propertyId:
+                  type: string
+                scheduledDate:
+                  type: string
+                  format: date-time
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /bookings/{id}/confirm:
+    put:
+      tags:
+        - Bookings
+      summary: Confirm a booking (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking confirmed
+        '403':
+          description: Only property owner can confirm
+        '404':
+          description: Booking not found
+
+  /bookings/{id}/cancel:
+    put:
+      tags:
+        - Bookings
+      summary: Cancel a booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Booking cancelled
+        '404':
+          description: Booking not found
+
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user's notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    type:
+                      type: string
+                    title:
+                      type: string
+                    message:
+                      type: string
+                    isRead:
+                      type: boolean
+                    createdAt:
+                      type: string
+
+  /notifications/{id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /admin/dashboard:
+    get:
+      tags:
+        - Admin
+      summary: Get admin dashboard metrics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: integer
+                  totalProperties:
+                    type: integer
+                  totalBookings:
+                    type: integer
+                  pendingVerifications:
+                    type: integer
+        '403':
+          description: Admin access required
