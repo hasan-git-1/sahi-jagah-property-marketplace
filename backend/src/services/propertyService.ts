@@ -2,7 +2,7 @@ import { db } from '../config/firebase';
 import { Property, CreatePropertyDto, UpdatePropertyDto } from '../models/property';
 import { AppError } from '../middlewares/errorHandler';
 import { logger } from '../config/logger';
-import { indexProperty, updatePropertyIndex, deletePropertyFromIndex } from '../config/algolia';
+import { updatePropertyIndex, deletePropertyFromIndex } from '../config/algolia';
 
 export class PropertyService {
   async createProperty(ownerId: string, data: CreatePropertyDto): Promise<Property> {

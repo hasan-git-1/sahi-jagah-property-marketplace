@@ -128,7 +128,7 @@ export class NotificationService {
       .get();
 
     const batch = firestore.batch();
-    snapshot.docs.forEach((doc) => {
+    snapshot.docs.forEach((doc: any) => {
       batch.update(doc.ref, { read: true });
     });
 
@@ -164,7 +164,7 @@ export class NotificationService {
       .get();
 
     const batch = firestore.batch();
-    snapshot.docs.forEach((doc) => {
+    snapshot.docs.forEach((doc: any) => {
       batch.delete(doc.ref);
     });
 
