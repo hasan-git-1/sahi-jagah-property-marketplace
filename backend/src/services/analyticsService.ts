@@ -1,4 +1,4 @@
-import { firestore } from '../config/firebase';
+import { db } from '../config/firebase';
 
 export interface DashboardMetrics {
   totalUsers: number;
@@ -35,26 +35,26 @@ export class AnalyticsService {
     // Get counts
     const [usersSnapshot, propertiesSnapshot, bookingsSnapshot, conversationsSnapshot] =
       await Promise.all([
-        firestore.collection('users').get(),
-        firestore.collection('properties').get(),
-        firestore.collection('bookings').get(),
-        firestore.collection('conversations').get(),
+        db.collection('users').get(),
+        db.collection('properties').get(),
+        db.collection('bookings').get(),
+        db.collection('conversations').get(),
       ]);
 
     // Calculate active users (logged in within 30 days)
-    const activeUsers = usersSnapshot.docs.filter((doc) => {
+    const activeUsers = usersSnapshot.docs.filter((doc: any) => {
       const data = doc.data();
       return data.lastLoginAt && data.lastLoginAt > thirtyDaysAgo;
     }).length;
 
     // Calculate active properties
-    const activeProperties = propertiesSnapshot.docs.filter((doc) => {
+    const activeProperties = propertiesSnapshot.docs.filter((doc: any) => {
       const data = doc.data();
       return data.status === 'active';
     }).length;
 
     // Calculate pending verifications
-    const pendingVerifications = propertiesSnapshot.docs.filter((doc) => {
+    const pendingVerifications = propertiesSnapshot.docs.filter((doc: any) => {
       const data = doc.data();
       return data.verificationStatus === 'pending';
     }).length;
@@ -76,14 +76,14 @@ export class AnalyticsService {
    */
   async getAnalytics(): Promise<AnalyticsData> {
     const [usersSnapshot, propertiesSnapshot, bookingsSnapshot] = await Promise.all([
-      firestore.collection('users').get(),
-      firestore.collection('properties').get(),
-      firestore.collection('bookings').get(),
+      db.collection('users').get(),
+      db.collection('properties').get(),
+      db.collection('bookings').get(),
     ]);
 
     // Aggregate by city
     const byCity: { [city: string]: number } = {};
-    propertiesSnapshot.docs.forEach((doc) => {
+    propertiesSnapshot.docs.forEach((doc: any) => {
       const data = doc.data();
       const city = data.address?.city || 'Unknown';
       byCity[city] = (byCity[city] || 0) + 1;
@@ -91,7 +91,7 @@ export class AnalyticsService {
 
     // Aggregate by property type
     const byPropertyType = { rent: 0, sale: 0 };
-    propertiesSnapshot.docs.forEach((doc) => {
+    propertiesSnapshot.docs.forEach((doc: any) => {
       const data = doc.data();
       if (data.type === 'rent') byPropertyType.rent++;
       else if (data.type === 'sale') byPropertyType.sale++;
@@ -99,7 +99,7 @@ export class AnalyticsService {
 
     // Aggregate users by role
     const usersByRole = { client: 0, owner: 0, agent: 0, admin: 0 };
-    usersSnapshot.docs.forEach((doc) => {
+    usersSnapshot.docs.forEach((doc: any) => {
       const data = doc.data();
       const role = data.role || 'client';
       if (role in usersByRole) {
@@ -109,7 +109,7 @@ export class AnalyticsService {
 
     // Aggregate bookings by status
     const bookingsByStatus = { requested: 0, confirmed: 0, cancelled: 0, completed: 0 };
-    bookingsSnapshot.docs.forEach((doc) => {
+    bookingsSnapshot.docs.forEach((doc: any) => {
       const data = doc.data();
       const status = data.status || 'requested';
       if (status in bookingsByStatus) {
@@ -198,7 +198,7 @@ export class AnalyticsService {
     search?: string;
     limit?: number;
   }): Promise<any[]> {
-    let query: FirebaseFirestore.Query = firestore.collection('users');
+    let query: FirebaseFirestore.Query = db.collection('users');
 
     if (filters?.role) {
       query = query.where('role', '==', filters.role);
@@ -236,7 +236,7 @@ export class AnalyticsService {
    * Update user status
    */
   async updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<void> {
-    await firestore.collection('users').doc(userId).update({
+    await db.collection('users').doc(userId).update({
       status,
       updatedAt: Date.now(),
     });
@@ -251,7 +251,7 @@ export class AnalyticsService {
     city?: string;
     limit?: number;
   }): Promise<any[]> {
-    let query: FirebaseFirestore.Query = firestore.collection('properties');
+    let query: FirebaseFirestore.Query = db.collection('properties');
 
     if (filters?.status) {
       query = query.where('status', '==', filters.status);

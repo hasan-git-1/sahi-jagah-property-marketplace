@@ -8,7 +8,7 @@ export class NotificationController {
    */
   async getNotifications(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const limit = parseInt(req.query.limit as string) || 50;
       const unreadOnly = req.query.unreadOnly === 'true';
 
@@ -38,7 +38,7 @@ export class NotificationController {
    */
   async getUnreadCount(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const count = await notificationService.getUnreadCount(userId);
 
       res.json({
@@ -84,7 +84,7 @@ export class NotificationController {
    */
   async markAllAsRead(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       await notificationService.markAllAsRead(userId);
 
       res.json({

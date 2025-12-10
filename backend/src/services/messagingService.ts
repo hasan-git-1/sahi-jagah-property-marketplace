@@ -96,7 +96,7 @@ export class MessagingService {
         // Get other participant details
         if (otherUserId) {
           try {
-            const userDoc = await firestore.collection('users').doc(otherUserId).get();
+            const userDoc = await db.collection('users').doc(otherUserId).get();
             if (userDoc.exists) {
               const userData = userDoc.data();
               enrichedConv.otherParticipant = {
@@ -114,7 +114,7 @@ export class MessagingService {
         // Get property details if exists
         if (conv.propertyId) {
           try {
-            const propertyDoc = await firestore
+            const propertyDoc = await db
               .collection('properties')
               .doc(conv.propertyId)
               .get();

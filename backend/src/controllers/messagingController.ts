@@ -19,7 +19,7 @@ export class MessagingController {
    */
   async getConversations(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const conversations = await messagingService.getUserConversations(userId);
 
       res.json({
@@ -42,7 +42,7 @@ export class MessagingController {
    */
   async createConversation(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const validation = createConversationSchema.safeParse(req.body);
 
       if (!validation.success) {
@@ -89,7 +89,7 @@ export class MessagingController {
    */
   async getConversation(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const { id } = req.params;
 
       const conversation = await messagingService.getConversation(id);
@@ -129,7 +129,7 @@ export class MessagingController {
    */
   async sendMessage(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const { id } = req.params;
       const validation = sendMessageSchema.safeParse(req.body);
 
@@ -168,7 +168,7 @@ export class MessagingController {
    */
   async getMessages(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const { id } = req.params;
       const limit = parseInt(req.query.limit as string) || 50;
 
@@ -210,7 +210,7 @@ export class MessagingController {
    */
   async markAsRead(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const { id } = req.params;
 
       await messagingService.markMessagesAsRead(id, userId);
@@ -237,7 +237,7 @@ export class MessagingController {
    */
   async getUnreadCount(req: Request, res: Response) {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user!.userId;
       const count = await messagingService.getUnreadCount(userId);
 
       res.json({
