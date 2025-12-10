@@ -133,17 +133,17 @@ export class AnalyticsService {
     const end = endDate.getTime();
 
     const [usersSnapshot, propertiesSnapshot, bookingsSnapshot] = await Promise.all([
-      firestore
+      db
         .collection('users')
         .where('createdAt', '>=', start)
         .where('createdAt', '<=', end)
         .get(),
-      firestore
+      db
         .collection('properties')
         .where('createdAt', '>=', start)
         .where('createdAt', '<=', end)
         .get(),
-      firestore
+      db
         .collection('bookings')
         .where('createdAt', '>=', start)
         .where('createdAt', '<=', end)
@@ -280,7 +280,7 @@ export class AnalyticsService {
    * Verify property
    */
   async verifyProperty(propertyId: string, approved: boolean, reason?: string): Promise<void> {
-    await firestore
+    await db
       .collection('properties')
       .doc(propertyId)
       .update({

@@ -17,6 +17,8 @@
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": false,
     "noImplicitAny": false,
+    "suppressImplicitAnyIndexErrors": true,
+    "noStrictGenericChecks": true,
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,

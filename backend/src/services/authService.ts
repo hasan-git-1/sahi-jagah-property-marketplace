@@ -37,14 +37,16 @@ export class AuthService {
 
   // Generate JWT tokens
   private generateTokens(userId: string, role: string) {
+    const payload = { userId, role };
+    
     const accessToken = jwt.sign(
-      { userId, role }, 
+      payload, 
       JWT_SECRET, 
       { expiresIn: JWT_EXPIRES_IN }
     );
 
     const refreshToken = jwt.sign(
-      { userId, role }, 
+      payload, 
       JWT_REFRESH_SECRET, 
       { expiresIn: JWT_REFRESH_EXPIRES_IN }
     );
