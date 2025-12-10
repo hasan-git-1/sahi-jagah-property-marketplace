@@ -105,7 +105,7 @@ export class FavoriteService {
           const property = propertyDoc.data() as Property;
           // Only include active properties
           if (property.status === 'active') {
-            properties.push({ id: propertyDoc.id, ...property });
+            properties.push({ ...property, id: propertyDoc.id });
           }
         }
       }

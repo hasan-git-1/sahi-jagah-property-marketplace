@@ -1,12 +1,11 @@
-import { database } from '../config/firebase';
-import { firestore } from '../config/firebase';
+import { realtimeDb, db } from '../config/firebase';
 import { Conversation, Message, ConversationWithDetails } from '../models/conversation';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadToCloudinary } from '../config/cloudinary';
+import { uploadImage } from '../config/cloudinary';
 
 export class MessagingService {
-  private conversationsRef = database.ref('conversations');
-  private messagesRef = database.ref('messages');
+  private conversationsRef = realtimeDb.ref('conversations');
+  private messagesRef = realtimeDb.ref('messages');
 
   /**
    * Create or get existing conversation between two users
@@ -172,16 +171,12 @@ export class MessagingService {
     if (attachments && attachments.length > 0) {
       attachmentData = await Promise.all(
         attachments.map(async (file) => {
-          const result = await uploadToCloudinary(file.buffer, {
-            folder: 'messages',
-            resource_type: 'image',
-            transformation: [{ width: 800, height: 800, crop: 'limit' }],
-          });
+          const result = await uploadImage(file, 'messages');
 
           return {
             type: 'image' as const,
-            url: result.secure_url,
-            thumbnailUrl: result.secure_url.replace('/upload/', '/upload/w_200,h_200,c_fill/'),
+            url: result.url,
+            thumbnailUrl: result.url.replace('/upload/', '/upload/w_200,h_200,c_fill/'),
           };
         })
       );

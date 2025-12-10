@@ -7,7 +7,7 @@
 
 import { db } from '../config/firebase.js';
 import cloudinary, { deleteAsset } from '../config/cloudinary.js';
-import { Document, DocumentType, DocumentStatus } from '../models/document.js';
+import { Document, DocumentType } from '../models/document.js';
 import { logger } from '../config/logger.js';
 
 const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
