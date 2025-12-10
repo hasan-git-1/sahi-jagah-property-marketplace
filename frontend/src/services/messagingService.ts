@@ -1,5 +1,5 @@
 import api from './api';
-import { database } from '../config/firebase';
+import { realtimeDb as database } from '../config/firebase';
 import { ref, onValue, off } from 'firebase/database';
 
 export interface Conversation {
