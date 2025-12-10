@@ -1,12 +1,12 @@
-import { firestore } from '../config/firebase';
+import { db } from '../config/firebase';
 import { Notification, NotificationType } from '../models/notification';
 import { sendEmail } from '../config/email';
 import { sendSMS } from '../config/sms';
 import { v4 as uuidv4 } from 'uuid';
 
 export class NotificationService {
-  private notificationsCollection = firestore.collection('notifications');
-  private usersCollection = firestore.collection('users');
+  private notificationsCollection = db.collection('notifications');
+  private usersCollection = db.collection('users');
 
   /**
    * Create in-app notification
@@ -106,7 +106,7 @@ export class NotificationService {
     }
 
     const snapshot = await query.get();
-    return snapshot.docs.map((doc) => doc.data() as Notification);
+    return snapshot.docs.map((doc: any) => doc.data() as Notification);
   }
 
   /**
@@ -127,7 +127,7 @@ export class NotificationService {
       .where('read', '==', false)
       .get();
 
-    const batch = firestore.batch();
+    const batch = db.batch();
     snapshot.docs.forEach((doc: any) => {
       batch.update(doc.ref, { read: true });
     });
@@ -163,7 +163,7 @@ export class NotificationService {
       .where('createdAt', '<', thirtyDaysAgo)
       .get();
 
-    const batch = firestore.batch();
+    const batch = db.batch();
     snapshot.docs.forEach((doc: any) => {
       batch.delete(doc.ref);
     });

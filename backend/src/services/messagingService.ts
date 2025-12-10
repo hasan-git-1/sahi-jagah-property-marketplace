@@ -53,7 +53,7 @@ export class MessagingService {
       .once('value');
 
     const conversations: Conversation[] = [];
-    snapshot.forEach((child) => {
+    snapshot.forEach((child: any) => {
       conversations.push(child.val());
     });
 
@@ -78,7 +78,7 @@ export class MessagingService {
       .once('value');
 
     const conversations: Conversation[] = [];
-    snapshot.forEach((child) => {
+    snapshot.forEach((child: any) => {
       const conv = child.val();
       if (conv.participants.includes(userId)) {
         conversations.push(conv);
@@ -233,7 +233,7 @@ export class MessagingService {
       .once('value');
 
     const messages: Message[] = [];
-    snapshot.forEach((child) => {
+    snapshot.forEach((child: any) => {
       messages.push(child.val());
     });
 
