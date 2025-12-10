@@ -209,7 +209,7 @@ jobs:
           path: frontend/dist
 
       - name: Deploy frontend to Netlify (Staging)
-        uses: nwtgck/actions-netlify@v2
+        uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: './frontend/dist'
           production-deploy: false
@@ -254,7 +254,7 @@ jobs:
           path: frontend/dist
 
       - name: Deploy frontend to Netlify (Production)
-        uses: nwtgck/actions-netlify@v2
+        uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: './frontend/dist'
           production-deploy: true
