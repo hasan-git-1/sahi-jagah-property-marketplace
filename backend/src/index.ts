@@ -50,10 +50,18 @@ app.use(helmet({
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:5173',
+      'https://sahijagah.netlify.app',
+      'https://sahi-jagah-staging.netlify.app',
+      'https://deploy-preview-*--sahijagah.netlify.app',
+      /^https:\/\/deploy-preview-\d+--sahijagah\.netlify\.app$/,
+      'http://127.0.0.1:5500', // For local testing
+      'http://localhost:3000'
+    ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 
