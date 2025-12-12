@@ -1,0 +1,5 @@
+[33m9bd6496[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Add netlify.toml to fix publish directory path
+[33m5cbf957[m Fix Firebase database import in messagingService
+[33m60649e1[m Add missing recharts dependency for AdminAnalyticsTab
+[33m52ebfff[m Fix frontend build: Remove TypeScript compilation from build script
+[33m4461474[m FINAL SOLUTION: JavaScript entry point to bypass TypeScript compilation

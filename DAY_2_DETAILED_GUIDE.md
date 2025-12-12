@@ -556,4 +556,4 @@ If something isn't working:
 
 ---
 
-**Rest up and enjoy seeing your creation on the internet! Tomorrow we can make it even better! 💪**
+**Rest up and enjoy seeing your creation on the internet! Tomorrow we can make it even

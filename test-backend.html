@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Test</title>
+</head>
+<body>
+    <h1>Testing Sahi Jagah Backend</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testBackend() {
+            const results = document.getElementById('results');
+            
+            // Test 1: Basic health check
+            try {
+                const response1 = await fetch('https://sahijagahproperty.vercel.app/health');
+                const data1 = await response1.json();
+                results.innerHTML += '<p>✅ Basic Health: ' + JSON.stringify(data1) + '</p>';
+            } catch (error) {
+                results.innerHTML += '<p>❌ Basic Health Error: ' + error.message + '</p>';
+            }
+            
+            // Test 2: API health check
+            try {
+                const response2 = await fetch('https://sahijagahproperty.vercel.app/api/v1/health');
+                const data2 = await response2.json();
+                results.innerHTML += '<p>✅ API Health: ' + JSON.stringify(data2) + '</p>';
+            } catch (error) {
+                results.innerHTML += '<p>❌ API Health Error: ' + error.message + '</p>';
+            }
+            
+            // Test 3: Try signup endpoint
+            try {
+                const response3 = await fetch('https://sahijagahproperty.vercel.app/api/v1/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        password: 'testpassword',
+                        role: 'client'
+                    })
+                });
+                const data3 = await response3.text();
+                results.innerHTML += '<p>📝 Signup Test Response: ' + data3 + '</p>';
+            } catch (error) {
+                results.innerHTML += '<p>❌ Signup Test Error: ' + error.message + '</p>';
+            }
+        }
+        
+        testBackend();
+    </script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahi Jagah API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Sahi Jagah API Test</h1>
+    <p>This will test your backend API to identify signup issues.</p>
+    
+    <button onclick="runAllTests()">🚀 Run All Tests</button>
+    <button onclick="clearResults()">🧹 Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'https://sahijagahproperty.vercel.app';
+        
+        function addResult(title, content, type = 'loading') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = `<h3>${title}</h3><div>${content}</div>`;
+            results.appendChild(div);
+            return div;
+        }
+        
+        function updateResult(element, content, type) {
+            element.className = `test ${type}`;
+            element.querySelector('div').innerHTML = content;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testEndpoint(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    method: options.method || 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    body: options.body ? JSON.stringify(options.body) : undefined
+                });
+                
+                let data;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+                
+                return {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data,
+                    headers: Object.fromEntries(response.headers.entries())
+                };
+            } catch (error) {
+                return {
+                    error: error.message,
+                    type: 'network_error'
+                };
+            }
+        }
+        
+        async function test1_HealthCheck() {
+            const element = addResult('1. Health Check', 'Testing API health endpoint...', 'loading');
+            
+            const result = await testEndpoint(`${API_BASE}/api/v1/health`);
+            
+            if (result.error) {
+                updateResult(element, `
+                    <div class="status">❌ FAILED</div>
+                    <p><strong>Error:</strong> ${result.error}</p>
+                    <p><strong>Type:</strong> ${result.type}</p>
+                    <p><strong>Possible Issues:</strong></p>
+                    <ul>
+                        <li>Backend not deployed</li>
+                        <li>Wrong URL</li>
+                        <li>CORS issues</li>
+                        <li>Network connectivity</li>
+                    </ul>
+                `, 'error');
+            } else {
+                const isSuccess = result.status === 200;
+                updateResult(element, `
+                    <div class="status">${isSuccess ? '✅ SUCCESS' : '⚠️ UNEXPECTED'}</div>
+                    <p><strong>Status:</strong> ${result.status} ${result.statusText}</p>
+                    <p><strong>Response:</strong></p>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `, isSuccess ? 'success' : 'error');
+            }
+        }
+        
+        async function test2_SignupEndpoint() {
+            const element = addResult('2. Signup Endpoint', 'Testing signup with sample data...', 'loading');
+            
+            const testData = {
+                name: 'Test User',
+                email: 'test@example.com',
+                password: 'testpassword123',
+                role: 'client'
+            };
+            
+            const result = await testEndpoint(`${API_BASE}/api/v1/auth/signup`, {
+                method: 'POST',
+                body: testData
+            });
+            
+            if (result.error) {
+                updateResult(element, `
+                    <div class="status">❌ NETWORK ERROR</div>
+                    <p><strong>Error:</strong> ${result.error}</p>
+                    <p><strong>Possible Issues:</strong></p>
+                    <ul>
+                        <li>CORS not configured for your domain</li>
+                        <li>Backend not responding</li>
+                        <li>Route not found</li>
+                    </ul>
+                `, 'error');
+            } else {
+                const isSuccess = result.status === 201 || result.status === 200;
+                const isUserExists = result.status === 409;
+                
+                let statusText = '❌ FAILED';
+                let resultType = 'error';
+                
+                if (isSuccess) {
+                    statusText = '✅ SUCCESS';
+                    resultType = 'success';
+                } else if (isUserExists) {
+                    statusText = '⚠️ USER EXISTS (This is OK)';
+                    resultType = 'success';
+                }
+                
+                updateResult(element, `
+                    <div class="status">${statusText}</div>
+                    <p><strong>Status:</strong> ${result.status} ${result.statusText}</p>
+                    <p><strong>Test Data Sent:</strong></p>
+                    <pre>${JSON.stringify(testData, null, 2)}</pre>
+                    <p><strong>Response:</strong></p>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    ${result.status >= 400 ? `
+                    <p><strong>Possible Issues:</strong></p>
+                    <ul>
+                        <li>Database connection failed</li>
+                        <li>Firebase credentials missing</li>
+                        <li>Validation errors</li>
+                        <li>Server configuration issues</li>
+                    </ul>
+                    ` : ''}
+                `, resultType);
+            }
+        }
+        
+        async function test3_CORSCheck() {
+            const element = addResult('3. CORS Configuration', 'Testing CORS headers...', 'loading');
+            
+            const result = await testEndpoint(`${API_BASE}/api/v1/health`);
+            
+            if (result.error) {
+                updateResult(element, `
+                    <div class="status">❌ CORS ISSUE</div>
+                    <p><strong>Error:</strong> ${result.error}</p>
+                    <p>This suggests CORS is not properly configured.</p>
+                `, 'error');
+            } else {
+                const corsHeaders = {
+                    'access-control-allow-origin': result.headers['access-control-allow-origin'],
+                    'access-control-allow-methods': result.headers['access-control-allow-methods'],
+                    'access-control-allow-headers': result.headers['access-control-allow-headers']
+                };
+                
+                const hasCORS = corsHeaders['access-control-allow-origin'];
+                
+                updateResult(element, `
+                    <div class="status">${hasCORS ? '✅ CORS OK' : '⚠️ CORS MISSING'}</div>
+                    <p><strong>CORS Headers:</strong></p>
+                    <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>
+                    ${!hasCORS ? `
+                    <p><strong>Issue:</strong> Backend needs CORS configuration for your frontend domain.</p>
+                    ` : ''}
+                `, hasCORS ? 'success' : 'error');
+            }
+        }
+        
+        async function test4_EnvironmentCheck() {
+            const element = addResult('4. Environment Variables', 'Checking frontend environment...', 'loading');
+            
+            const envVars = {
+                'VITE_API_URL': window.location.hostname.includes('localhost') ? 
+                    'Not available in production build' : 
+                    'Check your Netlify environment variables',
+                'Current Origin': window.location.origin,
+                'Expected API': API_BASE
+            };
+            
+            updateResult(element, `
+                <div class="status">ℹ️ INFO</div>
+                <p><strong>Environment Check:</strong></p>
+                <pre>${JSON.stringify(envVars, null, 2)}</pre>
+                <p><strong>Instructions:</strong></p>
+                <ul>
+                    <li>Verify VITE_API_URL in Netlify = ${API_BASE}/api/v1</li>
+                    <li>Ensure all VITE_FIREBASE_* variables are set</li>
+                    <li>Check that backend CORS allows: ${window.location.origin}</li>
+                </ul>
+            `, 'loading');
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            
+            await test1_HealthCheck();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await test2_SignupEndpoint();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await test3_CORSCheck();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await test4_EnvironmentCheck();
+            
+            // Summary
+            setTimeout(() => {
+                addResult('📋 Summary & Next Steps', `
+                    <p><strong>If all tests pass:</strong> Your backend is working! The issue might be with frontend environment variables.</p>
+                    <p><strong>If tests fail:</strong> Follow the specific error messages above.</p>
+                    <p><strong>Common fixes:</strong></p>
+                    <ul>
+                        <li>Update VITE_API_URL in Netlify to: ${API_BASE}/api/v1</li>
+                        <li>Configure CORS in backend to allow: ${window.location.origin}</li>
+                        <li>Verify Firebase credentials in both Netlify and Vercel</li>
+                        <li>Check Vercel function logs for backend errors</li>
+                    </ul>
+                    <p><strong>Next:</strong> If signup still fails after fixes, check browser console for detailed error messages.</p>
+                `, 'loading');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
