@@ -1,18 +1,26 @@
 {
   "version": 2,
   "functions": {
-    "index-minimal.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/index-minimal.js"
+      "source": "/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/api/v1/health",
+      "destination": "/api/v1/health"
+    },
+    {
+      "source": "/api/v1/auth/signup",
+      "destination": "/api/v1/auth/signup"
+    },
+    {
+      "source": "/api/v1/auth/login",
+      "destination": "/api/v1/auth/login"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
