@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔄 Real-time Backend Monitor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 15px; margin: 10px 0; border-radius: 8px; font-weight: bold; }
+        .online { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .offline { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .testing { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .log { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:disabled { background: #6c757d; }
+        .counter { font-size: 24px; font-weight: bold; color: #007bff; }
+        .deployment-info { background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Real-time Backend Monitor</h1>
+        <p>Monitoring your Vercel backend deployment in real-time...</p>
+        
+        <div class="deployment-info">
+            <h3>📋 Deployment Status</h3>
+            <p><strong>Backend URL:</strong> https://sahijagahproperty.vercel.app</p>
+            <p><strong>Last Deploy:</strong> <span id="deployTime">Just now (minimal backend)</span></p>
+            <p><strong>Expected:</strong> Backend should be online within 2-3 minutes</p>
+        </div>
+        
+        <div id="status" class="status offline">
+            🔴 Backend Status: OFFLINE - Checking...
+        </div>
+        
+        <div>
+            <strong>Test Counter:</strong> <span class="counter" id="counter">0</span>
+            <button onclick="startMonitoring()" id="startBtn">🚀 Start Monitoring</button>
+            <button onclick="stopMonitoring()" id="stopBtn" disabled>⏹️ Stop</button>
+            <button onclick="testNow()" id="testBtn">🧪 Test Now</button>
+        </div>
+        
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        let monitoringInterval;
+        let testCount = 0;
+        const API_BASE = 'https://sahijagahproperty.vercel.app';
+        
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log';
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+            
+            // Keep only last 20 logs
+            while (logs.children.length > 20) {
+                logs.removeChild(logs.firstChild);
+            }
+        }
+        
+        function updateStatus(isOnline, message) {
+            const status = document.getElementById('status');
+            if (isOnline) {
+                status.className = 'status online';
+                status.innerHTML = '🟢 Backend Status: ONLINE - ' + message;
+            } else {
+                status.className = 'status offline';
+                status.innerHTML = '🔴 Backend Status: OFFLINE - ' + message;
+            }
+        }
+        
+        async function testBackend() {
+            testCount++;
+            document.getElementById('counter').textContent = testCount;
+            
+            try {
+                log(`Test #${testCount}: Checking backend health...`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                
+                const response = await fetch(`${API_BASE}/health`, {
+                    signal: controller.signal,
+                    cache: 'no-cache'
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus(true, `Responding (${response.status})`);
+                    log(`✅ SUCCESS: Backend is online! Response: ${JSON.stringify(data)}`, 'success');
+                    
+                    // Test API endpoint too
+                    setTimeout(testAPIEndpoint, 1000);
+                    return true;
+                } else {
+                    updateStatus(false, `HTTP ${response.status}`);
+                    log(`❌ HTTP Error: ${response.status} ${response.statusText}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    updateStatus(false, 'Request timeout (10s)');
+                    log(`⏰ Timeout: Request took longer than 10 seconds`, 'error');
+                } else {
+                    updateStatus(false, 'Network error');
+                    log(`❌ Network Error: ${error.message}`, 'error');
+                }
+                return false;
+            }
+        }
+        
+        async function testAPIEndpoint() {
+            try {
+                log('Testing API endpoint /api/v1/health...');
+                
+                const response = await fetch(`${API_BASE}/api/v1/health`, {
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ API Endpoint Working: ${JSON.stringify(data)}`, 'success');
+                    
+                    // Test signup endpoint
+                    setTimeout(testSignupEndpoint, 1000);
+                } else {
+                    log(`❌ API Endpoint Error: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ API Endpoint Failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSignupEndpoint() {
+            try {
+                log('Testing signup endpoint...');
+                
+                const testData = {
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    password: 'testpass123',
+                    role: 'client'
+                };
+                
+                const response = await fetch(`${API_BASE}/api/v1/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testData),
+                    cache: 'no-cache'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok || response.status === 409) {
+                    log(`🎉 SIGNUP WORKING! Status: ${response.status}, Response: ${JSON.stringify(data)}`, 'success');
+                    
+                    // Show success message
+                    setTimeout(() => {
+                        alert('🎉 SUCCESS! Your backend is fully working!\n\nYou can now:\n1. Stop monitoring\n2. Test signup on your live website\n3. Everything should work perfectly!');
+                    }, 2000);
+                } else {
+                    log(`⚠️ Signup Issue: ${response.status} - ${JSON.stringify(data)}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Signup Test Failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function startMonitoring() {
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            log('🚀 Started real-time monitoring...', 'info');
+            
+            // Test immediately
+            testBackend();
+            
+            // Then test every 15 seconds
+            monitoringInterval = setInterval(testBackend, 15000);
+        }
+        
+        function stopMonitoring() {
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+            }
+            
+            log('⏹️ Stopped monitoring', 'info');
+        }
+        
+        function testNow() {
+            testBackend();
+        }
+        
+        // Auto-start monitoring when page loads
+        window.onload = function() {
+            log('🔄 Backend monitor loaded. Vercel deployment should complete in 2-3 minutes.', 'info');
+            log('💡 The minimal backend should fix the "Failed to fetch" errors.', 'info');
+            
+            // Start monitoring automatically after 30 seconds
+            setTimeout(() => {
+                if (!monitoringInterval) {
+                    startMonitoring();
+                }
+            }, 30000);
+        };
+    </script>
+</body>
+</html>

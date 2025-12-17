@@ -1,0 +1,15 @@
+{
+  "name": "sahi-jagah-minimal-backend",
+  "version": "1.0.0",
+  "description": "Ultra-minimal backend with zero dependencies",
+  "main": "index-minimal.js",
+  "scripts": {
+    "start": "node index-minimal.js",
+    "dev": "node index-minimal.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

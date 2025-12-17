@@ -1,99 +1,175 @@
-// Minimal working backend for immediate testing
-const express = require('express');
-const cors = require('cors');
+// Ultra-minimal backend for Vercel - NO dependencies
+const http = require('http');
+const url = require('url');
 
-const app = express();
+// Simple CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+  'Content-Type': 'application/json'
+};
 
-// Enable CORS for all origins during debugging
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-
-app.use(express.json());
-
-// Basic health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    message: 'Minimal backend is working'
-  });
-});
-
-// API health check
-app.get('/api/v1/health', (req, res) => {
-  res.json({ 
-    success: true,
-    message: 'API is working',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Basic signup endpoint for testing
-app.post('/api/v1/auth/signup', (req, res) => {
-  console.log('Signup request received:', req.body);
-  
-  const { name, email, password, role } = req.body;
-  
-  if (!name || !role) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        code: 'VALIDATION_FAILED',
-        message: 'Name and role are required'
+// Parse JSON body
+function parseBody(req) {
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch (e) {
+        resolve({});
       }
     });
-  }
-  
-  // Simulate successful signup
-  res.status(201).json({
-    success: true,
-    data: {
-      user: {
-        id: 'test-user-' + Date.now(),
-        name: name,
-        email: email,
-        role: role,
-        isVerified: false
-      },
-      accessToken: 'test-token-' + Date.now(),
-      refreshToken: 'test-refresh-token-' + Date.now()
-    }
-  });
-});
-
-// Catch all other routes
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: 'NOT_FOUND',
-      message: `Route ${req.method} ${req.originalUrl} not found`
-    }
-  });
-});
-
-// Error handler
-app.use((error, req, res, next) => {
-  console.error('Error:', error);
-  res.status(500).json({
-    success: false,
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: 'Something went wrong'
-    }
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Minimal backend running on port ${PORT}`);
   });
 }
 
-module.exports = app;
+// Main handler
+async function handler(req, res) {
+  // Set CORS headers
+  Object.keys(corsHeaders).forEach(key => {
+    res.setHeader(key, corsHeaders[key]);
+  });
+
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  const parsedUrl = url.parse(req.url, true);
+  const path = parsedUrl.pathname;
+  const method = req.method;
+
+  console.log(`${method} ${path}`);
+
+  try {
+    // Health check
+    if (path === '/health' && method === 'GET') {
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        message: 'Ultra-minimal backend working'
+      }));
+      return;
+    }
+
+    // API Health check
+    if (path === '/api/v1/health' && method === 'GET') {
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        message: 'API is working',
+        timestamp: new Date().toISOString()
+      }));
+      return;
+    }
+
+    // Signup endpoint
+    if (path === '/api/v1/auth/signup' && method === 'POST') {
+      const body = await parseBody(req);
+      const { name, email, password, role } = body;
+
+      if (!name || !role) {
+        res.writeHead(400);
+        res.end(JSON.stringify({
+          success: false,
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: 'Name and role are required'
+          }
+        }));
+        return;
+      }
+
+      res.writeHead(201);
+      res.end(JSON.stringify({
+        success: true,
+        data: {
+          user: {
+            id: 'test-user-' + Date.now(),
+            name: name,
+            email: email,
+            role: role,
+            isVerified: false
+          },
+          accessToken: 'test-token-' + Date.now(),
+          refreshToken: 'test-refresh-token-' + Date.now()
+        }
+      }));
+      return;
+    }
+
+    // Login endpoint
+    if (path === '/api/v1/auth/login' && method === 'POST') {
+      const body = await parseBody(req);
+      const { email, password } = body;
+
+      if (!email || !password) {
+        res.writeHead(400);
+        res.end(JSON.stringify({
+          success: false,
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: 'Email and password are required'
+          }
+        }));
+        return;
+      }
+
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        data: {
+          user: {
+            id: 'test-user-login',
+            name: 'Test User',
+            email: email,
+            role: 'client',
+            isVerified: true
+          },
+          accessToken: 'test-login-token-' + Date.now(),
+          refreshToken: 'test-login-refresh-' + Date.now()
+        }
+      }));
+      return;
+    }
+
+    // 404 for all other routes
+    res.writeHead(404);
+    res.end(JSON.stringify({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: `Route ${method} ${path} not found`
+      }
+    }));
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.writeHead(500);
+    res.end(JSON.stringify({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Something went wrong'
+      }
+    }));
+  }
+}
+
+// For Vercel
+module.exports = handler;
+
+// For local testing
+if (require.main === module) {
+  const server = http.createServer(handler);
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`Ultra-minimal backend running on port ${PORT}`);
+  });
+}

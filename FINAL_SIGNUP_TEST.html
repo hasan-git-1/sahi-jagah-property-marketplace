@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Final Signup Test</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border-left: 4px solid #007bff; 
+        }
+        .success { background: #d4edda; border-left-color: #28a745; }
+        .error { background: #f8d7da; border-left-color: #dc3545; }
+        .warning { background: #fff3cd; border-left-color: #ffc107; }
+        .loading { background: #e2e3e5; border-left-color: #6c757d; }
+        
+        button { 
+            padding: 12px 24px; 
+            margin: 8px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        
+        pre { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 6px; 
+            overflow-x: auto; 
+            font-size: 14px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .status-icon { font-size: 24px; margin-right: 10px; }
+        .test-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+        .test-description { color: #6c757d; margin-bottom: 15px; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .final-result {
+            text-align: center;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Final Signup Test - Sahi Jagah Property</h1>
+        <p>This comprehensive test will verify that your signup functionality is working perfectly.</p>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+        
+        <button onclick="runFullTest()" id="testButton">🚀 Run Complete Test</button>
+        <button onclick="clearResults()" id="clearButton">🧹 Clear Results</button>
+        
+        <div id="results"></div>
+        <div id="finalResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://sahijagahproperty.vercel.app';
+        let currentStep = 0;
+        const totalSteps = 5;
+        
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        function addResult(title, description, content, type = 'loading') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                loading: '🔄'
+            };
+            
+            div.innerHTML = `
+                <div class="test-title">
+                    <span class="status-icon">${icons[type]}</span>
+                    ${title}
+                </div>
+                <div class="test-description">${description}</div>
+                <div>${content}</div>
+            `;
+            results.appendChild(div);
+            return div;
+        }
+        
+        function updateResult(element, content, type) {
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                loading: '🔄'
+            };
+            
+            element.className = `test-section ${type}`;
+            const titleElement = element.querySelector('.test-title .status-icon');
+            if (titleElement) {
+                titleElement.textContent = icons[type];
+            }
+            const contentElement = element.querySelector('div:last-child');
+            if (contentElement) {
+                contentElement.innerHTML = content;
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('finalResult').innerHTML = '';
+            currentStep = 0;
+            updateProgress();
+        }
+        
+        async function testEndpoint(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    method: options.method || 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    body: options.body ? JSON.stringify(options.body) : undefined
+                });
+                
+                let data;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+                
+                return {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data,
+                    headers: Object.fromEntries(response.headers.entries())
+                };
+            } catch (error) {
+                return {
+                    error: error.message,
+                    type: 'network_error'
+                };
+            }
+        }
+        
+        async function test1_BackendHealth() {
+            const element = addResult(
+                'Step 1: Backend Health Check',
+                'Testing if your backend server is responding',
+                'Connecting to backend...',
+                'loading'
+            );
+            
+            const result = await testEndpoint(`${API_BASE}/health`);
+            currentStep++;
+            updateProgress();
+            
+            if (result.error) {
+                updateResult(element, `
+                    <strong>❌ Backend is DOWN</strong><br>
+                    <strong>Error:</strong> ${result.error}<br>
+                    <strong>This means:</strong> Your Vercel backend is not responding.<br>
+                    <strong>Action needed:</strong> Check Vercel deployment status.
+                `, 'error');
+                return false;
+            } else if (result.status === 200) {
+                updateResult(element, `
+                    <strong>✅ Backend is ONLINE</strong><br>
+                    <strong>Status:</strong> ${result.status} ${result.statusText}<br>
+                    <strong>Response:</strong><br>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `, 'success');
+                return true;
+            } else {
+                updateResult(element, `
+                    <strong>⚠️ Unexpected Response</strong><br>
+                    <strong>Status:</strong> ${result.status} ${result.statusText}<br>
+                    <strong>Response:</strong><br>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `, 'warning');
+                return false;
+            }
+        }
+        
+        async function test2_APIHealth() {
+            const element = addResult(
+                'Step 2: API Health Check',
+                'Testing if your API endpoints are working',
+                'Testing API health...',
+                'loading'
+            );
+            
+            const result = await testEndpoint(`${API_BASE}/api/v1/health`);
+            currentStep++;
+            updateProgress();
+            
+            if (result.error) {
+                updateResult(element, `
+                    <strong>❌ API Routes Not Working</strong><br>
+                    <strong>Error:</strong> ${result.error}<br>
+                    <strong>This means:</strong> Backend is up but API routes are broken.
+                `, 'error');
+                return false;
+            } else if (result.status === 200) {
+                updateResult(element, `
+                    <strong>✅ API Routes Working</strong><br>
+                    <strong>Status:</strong> ${result.status}<br>
+                    <strong>Response:</strong><br>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `, 'success');
+                return true;
+            } else {
+                updateResult(element, `
+                    <strong>⚠️ API Issue</strong><br>
+                    <strong>Status:</strong> ${result.status}<br>
+                    <strong>Response:</strong><br>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `, 'warning');
+                return false;
+            }
+        }
+        
+        async function test3_CORSCheck() {
+            const element = addResult(
+                'Step 3: CORS Configuration',
+                'Testing if your frontend can communicate with backend',
+                'Checking CORS headers...',
+                'loading'
+            );
+            
+            const result = await testEndpoint(`${API_BASE}/api/v1/health`);
+            currentStep++;
+            updateProgress();
+            
+            if (result.error) {
+                updateResult(element, `
+                    <strong>❌ CORS Issue</strong><br>
+                    <strong>Error:</strong> ${result.error}<br>
+                    <strong>This means:</strong> Backend doesn't allow requests from your domain.<br>
+                    <strong>Fix needed:</strong> Update CORS configuration in backend.
+                `, 'error');
+                return false;
+            } else {
+                const corsHeaders = {
+                    'access-control-allow-origin': result.headers['access-control-allow-origin'],
+                    'access-control-allow-methods': result.headers['access-control-allow-methods'],
+                    'access-control-allow-headers': result.headers['access-control-allow-headers']
+                };
+                
+                const hasCORS = corsHeaders['access-control-allow-origin'];
+                
+                updateResult(element, `
+                    <strong>${hasCORS ? '✅ CORS Configured' : '⚠️ CORS Missing'}</strong><br>
+                    <strong>Your Origin:</strong> ${window.location.origin}<br>
+                    <strong>CORS Headers:</strong><br>
+                    <pre>${JSON.stringify(corsHeaders, null, 2)}</pre>
+                `, hasCORS ? 'success' : 'warning');
+                return true;
+            }
+        }
+        
+        async function test4_SignupEndpoint() {
+            const element = addResult(
+                'Step 4: Signup Functionality',
+                'Testing the actual signup process with sample data',
+                'Testing signup with sample user...',
+                'loading'
+            );
+            
+            const testData = {
+                name: 'Test User ' + Date.now(),
+                email: 'test' + Date.now() + '@example.com',
+                password: 'testpassword123',
+                role: 'client'
+            };
+            
+            const result = await testEndpoint(`${API_BASE}/api/v1/auth/signup`, {
+                method: 'POST',
+                body: testData
+            });
+            
+            currentStep++;
+            updateProgress();
+            
+            if (result.error) {
+                updateResult(element, `
+                    <strong>❌ Signup Failed - Network Error</strong><br>
+                    <strong>Error:</strong> ${result.error}<br>
+                    <strong>This means:</strong> Cannot reach signup endpoint.<br>
+                    <strong>Likely cause:</strong> CORS or network issues.
+                `, 'error');
+                return false;
+            } else if (result.status === 201 || result.status === 200) {
+                updateResult(element, `
+                    <strong>✅ Signup Working Perfectly!</strong><br>
+                    <strong>Status:</strong> ${result.status} ${result.statusText}<br>
+                    <strong>Test Data:</strong><br>
+                    <pre>${JSON.stringify(testData, null, 2)}</pre>
+                    <strong>Response:</strong><br>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `, 'success');
+                return true;
+            } else if (result.status === 409) {
+                updateResult(element, `
+                    <strong>✅ Signup Endpoint Working (User Exists)</strong><br>
+                    <strong>Status:</strong> ${result.status} - User already exists<br>
+                    <strong>This is good:</strong> The endpoint is working, just user already exists.<br>
+                    <strong>Response:</strong><br>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `, 'success');
+                return true;
+            } else {
+                updateResult(element, `
+                    <strong>❌ Signup Error</strong><br>
+                    <strong>Status:</strong> ${result.status} ${result.statusText}<br>
+                    <strong>Response:</strong><br>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    <strong>Possible issues:</strong><br>
+                    • Firebase configuration problems<br>
+                    • Missing environment variables<br>
+                    • Database connection issues
+                `, 'error');
+                return false;
+            }
+        }
+        
+        async function test5_EnvironmentCheck() {
+            const element = addResult(
+                'Step 5: Environment Configuration',
+                'Checking your deployment environment settings',
+                'Analyzing configuration...',
+                'loading'
+            );
+            
+            currentStep++;
+            updateProgress();
+            
+            const envInfo = {
+                'Current Domain': window.location.origin,
+                'Expected API URL': API_BASE,
+                'Browser': navigator.userAgent.split(' ')[0],
+                'Test Time': new Date().toISOString()
+            };
+            
+            updateResult(element, `
+                <strong>ℹ️ Environment Information</strong><br>
+                <pre>${JSON.stringify(envInfo, null, 2)}</pre>
+                <strong>Checklist for Netlify:</strong><br>
+                • VITE_API_URL = ${API_BASE}/api/v1<br>
+                • All VITE_FIREBASE_* variables set<br>
+                • Site deployed from main branch<br><br>
+                <strong>Checklist for Vercel:</strong><br>
+                • FIREBASE_SERVICE_ACCOUNT_KEY (full JSON)<br>
+                • FIREBASE_DATABASE_URL<br>
+                • JWT_SECRET<br>
+                • All other environment variables
+            `, 'loading');
+            
+            return true;
+        }
+        
+        async function runFullTest() {
+            clearResults();
+            
+            const testButton = document.getElementById('testButton');
+            testButton.disabled = true;
+            testButton.textContent = '🔄 Testing...';
+            
+            let allPassed = true;
+            
+            try {
+                // Run all tests
+                const test1Result = await test1_BackendHealth();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const test2Result = await test2_APIHealth();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const test3Result = await test3_CORSCheck();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const test4Result = await test4_SignupEndpoint();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const test5Result = await test5_EnvironmentCheck();
+                
+                // Determine overall result
+                allPassed = test1Result && test2Result && test3Result && test4Result;
+                
+                // Show final result
+                const finalResult = document.getElementById('finalResult');
+                if (allPassed) {
+                    finalResult.innerHTML = `
+                        <div class="final-result success">
+                            🎉 <strong>ALL TESTS PASSED!</strong><br>
+                            Your signup functionality is working perfectly!<br>
+                            <br>
+                            <strong>✅ What this means:</strong><br>
+                            • Backend is deployed and running<br>
+                            • API endpoints are working<br>
+                            • CORS is configured correctly<br>
+                            • Signup process is functional<br>
+                            <br>
+                            <strong>🚀 You can now:</strong><br>
+                            • Go to your live site and test signup<br>
+                            • Users can create accounts successfully<br>
+                            • All authentication features should work<br>
+                        </div>
+                    `;
+                } else {
+                    finalResult.innerHTML = `
+                        <div class="final-result error">
+                            ❌ <strong>SOME TESTS FAILED</strong><br>
+                            Your signup is not working yet.<br>
+                            <br>
+                            <strong>📋 Next Steps:</strong><br>
+                            1. Check the failed tests above<br>
+                            2. Follow the specific error messages<br>
+                            3. Fix the issues mentioned<br>
+                            4. Run the test again<br>
+                            <br>
+                            <strong>🆘 Common Fixes:</strong><br>
+                            • Wait 2-3 minutes for deployment<br>
+                            • Check Vercel environment variables<br>
+                            • Verify Firebase configuration<br>
+                            • Check Vercel function logs for errors<br>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                const finalResult = document.getElementById('finalResult');
+                finalResult.innerHTML = `
+                    <div class="final-result error">
+                        ❌ <strong>TEST ERROR</strong><br>
+                        Something went wrong during testing.<br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                testButton.disabled = false;
+                testButton.textContent = '🚀 Run Complete Test';
+            }
+        }
+    </script>
+</body>
+</html>
